@@ -30,6 +30,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.05fr) min
 #inp{flex:1;min-width:40px;background:transparent;border:0;outline:0;color:#fff;font:inherit;caret-color:#fff1a0;padding:0}
 .u{color:#bde8c3}.p{color:#b9c8ff}.k{color:#fff1a0}.b{color:#b9c8ff;font-weight:600}.r{color:#ff9fb8}.gn{color:#9be3a8}.y{color:#ffe3a6}.m{color:#8a93a6}
 #hint{background:var(--chip);border-radius:12px;padding:8px 12px;margin-top:10px;font-size:13px;min-height:38px}
+#kb{display:flex;gap:6px;margin-top:10px}#kb button{border:0;background:var(--chip);border-radius:12px;padding:9px 14px;font-size:14px;min-height:40px}#kb #snd{flex:1;background:#16171a;color:#fff;font-weight:600}#kb #snd:active{opacity:.8}
 #chips{display:flex;gap:6px;overflow:auto;padding:10px 0 2px;flex:none}
 #chips button{border:1px solid var(--bd);background:var(--card);border-radius:999px;padding:4px 12px;font:12.5px ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
 #chips button:hover,.tabs button:hover{background:var(--chip)}
@@ -74,8 +75,8 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.05fr) min
 <main>
 <section class="pane" id="tp">
  <div class="ph"><h2>Терминал</h2><button class="gh" id="rs">Сбросить песочницу</button></div>
- <div id="term"><div id="out"></div><div id="ln"><span id="pr"></span><input id="inp" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Командная строка"></div></div>
- <div id="hint"></div><div id="chips"></div>
+ <div id="term"><div id="out"></div><div id="ln"><span id="pr"></span><input id="inp" enterkeyhint="send" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Командная строка"></div></div>
+ <div id="kb"><button data-k="tab" type="button">Tab</button><button data-k="up" type="button" aria-label="Предыдущая команда">↑</button><button data-k="dn" type="button" aria-label="Следующая команда">↓</button><button id="snd" type="button">Отправить ↵</button></div><div id="hint"></div><div id="chips"></div>
  <div id="nano" hidden><div class="nh"><span>GNU nano · <b id="nf"></b></span><span id="nm"></span></div><textarea id="ta" spellcheck="false"></textarea>
   <div id="nq" hidden>Сохранить изменения? <button data-q="y">Да</button><button data-q="n">Нет</button><button data-q="c">Отмена</button></div>
   <div class="nb"><button id="no">Ctrl+O Сохранить</button><button id="nx">Ctrl+X Выйти</button></div></div>
@@ -235,7 +236,7 @@ g.innerHTML=`<div class="flow"><div><b>${x.un.length+x.ut.length}</b><small>Ра
 function boot(){fs={t:'d',c:{home:{t:'d',c:{user:{t:'d',c:{Desktop:{t:'d',c:{}}}}}}}};cwd=['home','user'];repos={};Cm={};seq=0;env={};sel=null;bw=null;hist=[];out.innerHTML='';
 raw('Добро пожаловать в учебный терминал Adele Labs.','b');raw('Это безопасная песочница: всё, что вы создаёте, живёт только в этой вкладке.\nВведите <span class="k">help</span> или нажимайте на подсказки под терминалом.\n','m');$('#hint').textContent='Введите команду и нажмите Enter. Справа видно, как меняется компьютер.';draw();tab('f')}
 inp.addEventListener('keydown',e=>{
-if(e.key=='Enter'){const v=inp.value;inp.value='';run(v);draw()}
+if(e.key=='Enter')send()
 else if(e.key=='ArrowUp'){e.preventDefault();if(hi>0)inp.value=hist[--hi]}
 else if(e.key=='ArrowDown'){e.preventDefault();inp.value=++hi<hist.length?hist[hi]:(hi=hist.length,'')}
 else if(e.key=='l'&&e.ctrlKey){e.preventDefault();out.innerHTML=''}
@@ -249,6 +250,9 @@ $('#term').onclick=()=>{if(!getSelection().toString())inp.focus()};
 $('#chips').innerHTML=CH.map(c=>`<button>${E(c)}</button>`).join('');
 $('#chips').onclick=e=>{if(e.target.tagName=='BUTTON'){inp.value=e.target.textContent;inp.focus()}};
 $('#rs').onclick=()=>{boot();inp.focus()};
+const send=()=>{const v=inp.value;inp.value='';run(v);draw();$('#term').scrollTop=1e9};
+$('#kb').onmousedown=e=>e.preventDefault();
+$('#kb').onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.k;if(b.id=='snd')send();else if(k=='tab')comp();else if(k=='up'){if(hi>0)inp.value=hist[--hi]}else if(k=='dn')inp.value=++hi<hist.length?hist[hi]:(hi=hist.length,'');inp.focus();$('#term').scrollTop=1e9};
 document.querySelector('.tabs').onclick=e=>{if(e.target.dataset.t)tab(e.target.dataset.t)};
 $('#tree').onclick=e=>{const t=e.target.closest('.tr');if(!t||!t.dataset.p)return;if(t.dataset.t=='d'){run('cd "'+t.dataset.p+'"');draw()}else{sel=t.dataset.p;draw()}};
 function nsave(){const e=wr(nfp,$('#ta').value);if(e){$('#nm').textContent=e;return false}nmod=false;$('#nm').textContent='Сохранено';draw();return true}
