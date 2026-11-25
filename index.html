@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Adele Labs — Терминал и Git</title>
+<style>
+:root{--bg:#f2f3f5;--card:#fff;--tx:#1b1b1f;--mu:#80848f;--bd:#e7e9ee;--chip:#f4f5f8;--sb:#c6cbd6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#111317;--card:#1c1f26;--tx:#eceef3;--mu:#98a0b0;--bd:#2c313c;--chip:#262a33;--sb:#3a4152}}
+:root[data-theme=dark]{--bg:#111317;--card:#1c1f26;--tx:#eceef3;--mu:#98a0b0;--bd:#2c313c;--chip:#262a33;--sb:#3a4152}
+*{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:var(--sb) transparent}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;height:100dvh;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea{font:inherit;color:inherit}button{cursor:pointer}
+.i{stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;flex:none}
+#ld{position:fixed;inset:0;z-index:99;background:var(--bg);display:grid;place-items:center;transition:opacity .5s}#ld.hide{opacity:0;pointer-events:none}
+.lw{text-align:center}.lg{width:70px;height:90px}
+.lg path{fill:currentColor;fill-opacity:0;stroke:currentColor;stroke-width:3;stroke-dasharray:1;stroke-dashoffset:1;animation:dr 1.2s ease forwards,fl .5s .9s ease forwards}
+@keyframes dr{to{stroke-dashoffset:0}}@keyframes fl{to{fill-opacity:1}}
+.lt{font-weight:800;font-size:22px;letter-spacing:-.02em;margin:14px 0}
+header{display:flex;align-items:center;padding:10px 24px;background:var(--card);border-bottom:1px solid var(--bd)}
+.brand{display:flex;gap:10px;align-items:center}.brand b{font-size:18px;letter-spacing:-.02em}.brand small{display:block;color:var(--mu);font-size:12px;line-height:1.1}
+.mk{width:36px;height:36px;padding:7px;background:#16171a;color:#fff;border-radius:11px}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:14px;padding:14px 24px}
+.pane{background:var(--card);border-radius:20px;padding:16px;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}h2{font-size:18px;margin:0}
+.gh{border:0;background:var(--chip);border-radius:999px;padding:5px 12px;font-size:13px}
+#term{flex:1;min-height:0;overflow:auto;background:#0f1420;color:#e6edf3;border-radius:14px;padding:12px 14px;font:13px/1.55 ui-monospace,Menlo,Consolas,monospace;scrollbar-color:#3a4254 transparent}
+#out>div{white-space:pre-wrap;word-break:break-word;min-height:1.55em}
+#ln{display:flex;align-items:baseline;gap:0}#pr{white-space:pre;flex:none}
+#inp{flex:1;min-width:40px;background:transparent;border:0;outline:0;color:#fff;font:inherit;caret-color:#fff1a0;padding:0}
+.u{color:#bde8c3}.p{color:#b9c8ff}.k{color:#fff1a0}.b{color:#b9c8ff;font-weight:600}.r{color:#ff9fb8}.gn{color:#9be3a8}.y{color:#ffe3a6}.m{color:#8a93a6}
+#hint{background:var(--chip);border-radius:12px;padding:8px 12px;margin-top:10px;font-size:13px;min-height:38px}
+#chips{display:flex;gap:6px;overflow:auto;padding:10px 0 2px;flex:none}
+#chips button{border:1px solid var(--bd);background:var(--card);border-radius:999px;padding:4px 12px;font:12.5px ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+#chips button:hover,.tabs button:hover{background:var(--chip)}
+#nano{position:absolute;inset:0;z-index:5;background:#0f1420;color:#e6edf3;display:flex;flex-direction:column;border-radius:20px;padding:14px;font:13px/1.55 ui-monospace,Menlo,Consolas,monospace}
+.nh{display:flex;justify-content:space-between;background:#e6edf3;color:#0f1420;padding:3px 10px;border-radius:6px}
+#ta{flex:1;background:transparent;border:0;outline:0;resize:none;color:#e6edf3;font:inherit;padding:10px 4px}
+#nq{background:#fff1a0;color:#1b1b1f;padding:6px 10px;border-radius:6px;margin-bottom:8px;display:flex;gap:8px;align-items:center}
+#nq button,.nb button{border:0;border-radius:6px;padding:3px 10px;background:#e6edf3;color:#0f1420;font:inherit}
+.nb{display:flex;gap:8px}
+.mon{flex:1;min-height:0;display:flex;flex-direction:column}
+.stage{flex:1;min-height:0;border:9px solid #16171a;border-radius:18px;background:linear-gradient(160deg,#cfe3f7,#e7f0fb 60%,#dcd4f7);display:flex;flex-direction:column;overflow:hidden}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .stage{background:linear-gradient(160deg,#25384f,#1f2a3b 60%,#2e2850)}}
+:root[data-theme=dark] .stage{background:linear-gradient(160deg,#25384f,#1f2a3b 60%,#2e2850)}
+.stand{width:90px;height:12px;margin:0 auto;background:#16171a;flex:none}.foot{width:170px;height:7px;margin:0 auto;background:#2a2c32;border-radius:6px;flex:none}
+.bar{display:flex;justify-content:space-between;align-items:center;padding:5px 12px;font-size:12px;background:#ffffff70;color:#1b1b1f;flex:none}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .bar{background:#0005;color:#eceef3}}
+:root[data-theme=dark] .bar{background:#0005;color:#eceef3}
+.bar span{display:flex;align-items:center;gap:6px;font-weight:600}.bar svg{width:12px;height:15px}
+.win{margin:12px;flex:1;min-height:0;background:var(--card);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 30px #0003}
+.wh{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--bd);flex:none;flex-wrap:wrap}
+.dots{display:flex;gap:5px}.dots i{width:10px;height:10px;border-radius:50%;background:#ff9fb8}.dots i+i{background:#ffe3a6}.dots i+i+i{background:#9be3a8}
+.tabs{display:flex;gap:4px;background:var(--chip);border-radius:10px;padding:3px}.tabs button{border:0;background:transparent;border-radius:8px;padding:3px 12px;font-size:13px}.tabs button.on{background:var(--card);box-shadow:0 1px 3px #0002}
+#path{margin-left:auto;color:var(--mu);font:12px ui-monospace,Menlo,Consolas,monospace}
+.wb{flex:1;min-height:0;overflow:auto}#wf{display:flex;flex-direction:column;overflow:hidden}
+#tree{flex:1;overflow:auto;padding:6px 0;font-size:14px}
+.tr{display:flex;align-items:center;gap:7px;padding:3px 10px;cursor:pointer;border-left:3px solid transparent}.tr:hover{background:var(--chip)}
+.tr.cur{background:#b9c8ff55;border-left-color:#8da3f0}.tr.sel{background:var(--chip);font-weight:600}.tr[data-t=d]{font-weight:500}.tr span{overflow:hidden;text-overflow:ellipsis}
+.bg{font:700 11px ui-monospace,monospace;font-style:normal;border-radius:6px;padding:0 6px;color:#1b1b1f;background:#ffe3a6;margin-left:auto}.bg.A{background:#bde8c3}.bg.D{background:#ffc9de}.bg.q{background:#ffc9de}
+#pv{border-top:1px solid var(--bd);max-height:42%;overflow:auto;padding:10px 14px;font-size:13px;flex:none}
+#pv pre{margin:6px 0 0;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap}#pv small,.sec{color:var(--mu)}
+#wg{padding:12px 14px;font-size:14px}
+.flow{display:flex;align-items:center;gap:6px;margin-bottom:12px}.flow div{flex:1;background:var(--chip);border-radius:12px;padding:8px 6px;text-align:center}.flow b{display:block;font-size:20px}.flow small{color:var(--mu);font-size:12px}.flow i{font:12px ui-monospace,monospace;color:var(--mu);font-style:normal}
+.fl{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}.ch{border-radius:999px;padding:1px 10px;font-size:13px;color:#1b1b1f;background:#b9c8ff}.ch.s{background:#bde8c3}.ch.c{background:#ffe3a6}.ch.u{background:#ffc9de}.ch.h{background:#dac7f6}
+.cm{display:flex;gap:10px;align-items:flex-start;padding:5px 0;position:relative}.cm:before{content:"";position:absolute;left:5px;top:20px;bottom:-8px;width:2px;background:var(--bd)}.cm:last-child:before{display:none}
+.cm i{width:12px;height:12px;border-radius:50%;background:#16171a;margin-top:5px;flex:none;position:relative;z-index:1}.cm.mg i{background:#b293e5}.cm code{font:12px ui-monospace,monospace;color:var(--mu)}
+.empty{color:var(--mu);padding:20px 4px;text-align:center}
+#wb{display:flex;flex-direction:column;overflow:hidden}.url{padding:6px 12px;border-bottom:1px solid var(--bd);font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--mu);background:var(--chip);flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#fr{flex:1;width:100%;border:0;background:#fff}
+@media(max-width:900px){body{height:auto;min-height:100dvh}main{grid-template-columns:1fr;padding:12px}.pane{min-height:85dvh}}
+</style></head><body>
+<div id="ld"><div class="lw"><svg class="lg" viewBox="0 0 361 462"><path class="lp" pathLength="1"/></svg><div class="lt">Adele Labs</div></div></div>
+<header><div class="brand"><svg class="mk" viewBox="0 0 361 462"><path class="lp" fill="currentColor"/></svg><div><b>Adele Labs</b><small>Практикум: терминал и Git</small></div></div></header>
+<main>
+<section class="pane" id="tp">
+ <div class="ph"><h2>Терминал</h2><button class="gh" id="rs">Сбросить песочницу</button></div>
+ <div id="term"><div id="out"></div><div id="ln"><span id="pr"></span><input id="inp" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Командная строка"></div></div>
+ <div id="hint"></div><div id="chips"></div>
+ <div id="nano" hidden><div class="nh"><span>GNU nano · <b id="nf"></b></span><span id="nm"></span></div><textarea id="ta" spellcheck="false"></textarea>
+  <div id="nq" hidden>Сохранить изменения? <button data-q="y">Да</button><button data-q="n">Нет</button><button data-q="c">Отмена</button></div>
+  <div class="nb"><button id="no">Ctrl+O Сохранить</button><button id="nx">Ctrl+X Выйти</button></div></div>
+</section>
+<section class="pane"><div class="ph"><h2>Экран компьютера</h2></div>
+ <div class="mon"><div class="stage"><div class="bar"><span><svg viewBox="0 0 361 462"><path class="lp" fill="currentColor"/></svg>Adele OS</span><span id="clk"></span></div>
+  <div class="win"><div class="wh"><div class="dots"><i></i><i></i><i></i></div><div class="tabs"><button data-t="f" class="on">Файлы</button><button data-t="g">Git</button><button data-t="b">Браузер</button></div><span id="path"></span></div>
+   <div class="wb" id="wf"><div id="tree"></div><div id="pv"></div></div><div class="wb" id="wg" hidden></div><div class="wb" id="wb" hidden><div class="url" id="url"></div><iframe id="fr" sandbox="allow-scripts" title="Браузер"></iframe></div></div></div>
+  <div class="stand"></div><div class="foot"></div></div>
+</section></main>
+<script>
+const LOGO="M361 111.247C361 49.9761 311.288 0.127619 250.138 0.0236722C250.138 0.0236722 250.069 0.0236722 250.045 0.0236722C250.022 0.0236722 249.976 0.0236722 249.953 0.0236722C249.907 0.0236722 249.873 0.0236722 249.826 0.0236722C230.119 -0.299719 210.885 2.69165 192.712 8.91694C153.171 22.4301 118.657 51.6393 95.5487 91.1739C55.9962 158.809 66.063 241.793 95.9868 306.391L0 439.836H27.2601L107.368 328.474C112.488 337.413 117.954 345.868 123.697 353.698C148.823 387.932 178.851 410.107 199.607 422.685C263.791 461.561 346.459 462 349.941 462H361V295.719H261.035V221.928C317.089 216.338 361 168.846 361 111.259V111.247ZM111.093 285.359C87.6382 227.195 82.6682 157.007 114.621 102.354C125.207 84.2672 138.434 68.6635 153.517 56.1668C144.222 72.4172 138.883 91.2085 138.883 111.236C138.883 144.349 153.424 174.112 176.418 194.497L111.081 285.347L111.093 285.359ZM238.895 417.603C229.37 413.688 219.972 409.114 211.035 403.697C191.997 392.171 164.483 371.843 141.501 340.555C136.289 333.463 131.377 325.864 126.787 317.86H238.895V417.603ZM238.895 295.707H130.915L194.372 207.479C207.714 215.241 222.797 220.311 238.895 221.916V295.707ZM238.895 199.545C227.606 198.136 216.951 194.659 207.368 189.416L238.895 145.596V199.556V199.545ZM338.86 317.86V439.374C323.212 438.404 292.919 435.274 261.023 425.468V317.86H338.86ZM189.471 176.364C172.013 160.091 161.012 136.957 161.012 111.236C161.012 62.1264 200.899 22.176 249.93 22.176C298.961 22.176 338.848 62.1264 338.848 111.236C338.848 156.58 304.819 194.047 261.012 199.533V76.8869L189.471 176.364Z";
+document.querySelectorAll('.lp').forEach(p=>p.setAttribute('d',LOGO));
+setTimeout(()=>$('#ld').classList.add('hide'),1500);
+function $(s){return document.querySelector(s)}
+const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hs=s=>{let x=5381;for(const c of s)x=(x*33^c.charCodeAt(0))>>>0;return x};
+const IC={d:'<svg class="i" viewBox="0 0 24 24" width="16" height="16" style="color:#8da3f0"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',f:'<svg class="i" viewBox="0 0 24 24" width="16" height="16" style="color:var(--mu)"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5"/></svg>'};
+const DESC=`pwd|показывает, в какой папке вы сейчас находитесь
+ls|показывает файлы и папки (ls -a — со скрытыми, ls -l — подробно)
+cd|переходит в другую папку (cd .. — на уровень вверх, cd ~ — домой)
+mkdir|создаёт папку (mkdir -p a/b — сразу вложенные)
+rmdir|удаляет пустую папку
+touch|создаёт пустой файл
+cat|выводит содержимое файла
+nano|открывает текстовый редактор: Ctrl+O — сохранить, Ctrl+X — выйти
+rm|удаляет файл (rm -r — папку вместе с содержимым)
+cp|копирует файл (cp -r — папку)
+mv|переносит или переименовывает файл или папку
+echo|печатает текст; с > записывает его в файл, с >> дописывает
+tree|рисует дерево папок и файлов
+grep|ищет в файле строки с нужным словом
+clear|очищает экран терминала
+history|показывает ранее введённые команды
+whoami|показывает имя пользователя
+date|показывает дату и время
+start|открывает HTML файл в браузере на экране компьютера (start index.html); подтягивает style.css и script.js из той же папки
+help|список команд
+git init|превращает текущую папку в репозиторий Git
+git clone|копирует удалённый репозиторий в новую папку
+git config|задаёт имя и почту автора коммитов
+git status|показывает, что изменилось и что готово к коммиту
+git add|переносит изменения в индекс — «корзину» для следующего коммита
+git commit|сохраняет индекс как коммит — снимок проекта
+git log|показывает историю коммитов (--oneline — коротко)
+git diff|показывает построчные отличия (--staged — для индекса)
+git branch|показывает ветки или создаёт новую
+git checkout|переключает ветку (-b — создать и переключиться)
+git switch|переключает ветку (-c — создать и переключиться)
+git merge|вливает другую ветку в текущую
+git restore|отменяет правки в файле (--staged — убирает из индекса)
+git reset|откатывает историю: --soft, --mixed, --hard
+git rm|удаляет файл и готовит удаление к коммиту
+git remote|показывает или добавляет удалённые репозитории
+git push|отправляет коммиты в удалённый репозиторий
+git pull|забирает изменения из удалённого репозитория`.split('\n').reduce((m,l)=>{const[k,v]=l.split('|');m[k]=v;return m},{});
+const TPL='<!DOCTYPE html>\n<html lang="ru">\n<head>\n  <meta charset="utf-8">\n  <title>Моя страница</title>\n</head>\n<body>\n  <h1>Привет, мир!</h1>\n  <p>Это моя первая страница.</p>\n</body>\n</html>\n';
+const page=s=>{const rl=h=>{if(/^(https?:|data:|\/\/)/i.test(h))return null;const a=bw.slice(0,-1);for(const p of h.split('/')){if(!p||p=='.')continue;p=='..'?a.pop():a.push(p)}const n=get(a);return n&&n.t=='f'?n.s:null};return s.replace(/<link\b[^>]*>/gi,m=>{const h=/href=["']?([^"'\s>]+)/i.exec(m),c=h&&/stylesheet/i.test(m)?rl(h[1]):null;return c===null?m:'<style>'+c+'</style>'}).replace(/<script\b[^>]*?src=["']?([^"'\s>]+)["']?[^>]*>\s*<\/script>/gi,(m,h)=>{const c=rl(h);return c===null?m:'<script>'+c+'<\/script>'})};
+const CH=['pwd','cd Desktop','nano index.html','start index.html','ls -a','mkdir проект','cd проект','touch a.txt','echo Привет > a.txt','nano a.txt','cat a.txt','tree','git init','git status','git add .','git commit -m "Первый коммит"','git log --oneline','git branch dev','git switch dev','git diff','git merge dev','git reset --hard HEAD~1','cd ..'];
+let fs,cwd,repos,Cm,seq,hist=[],hi=0,env={},cap=null,sel=null,nfp=null,nmod=false,bw=null,bwGo=0,lastB;
+const out=$('#out'),inp=$('#inp'),tmp=document.createElement('div');
+const norm=a=>a.length?'/'+a.join('/'):'/';
+const disp=a=>{const s=norm(a);return s=='/home/user'?'~':s.startsWith('/home/user/')?'~'+s.slice(10):s};
+const res=p=>{let a=p[0]=='/'?[]:p[0]=='~'?['home','user']:[...cwd];if(p[0]=='~')p=p.slice(1);for(const s of p.split('/')){if(!s||s=='.')continue;if(s=='..')a.pop();else a.push(s)}return a};
+const get=a=>{let n=fs;for(const s of a){if(n.t!='d'||!n.c[s])return null;n=n.c[s]}return n};
+const raw=(s,c='')=>{out.insertAdjacentHTML('beforeend','<div class="'+c+'">'+s+'</div>')};
+const o=(s,c='')=>{if(cap){tmp.innerHTML=s;cap.push(tmp.textContent)}else raw(s,c)};
+const er=s=>raw(E(s),'r');
+const nm=(k,n)=>`<span class="${n.t=='d'?'b':''}">${E(k)}</span>`;
+const wr=(a,s,ap)=>{const p=get(a.slice(0,-1)),n=a[a.length-1];if(!p||p.t!='d')return 'Нет такого файла или каталога';const f=p.c[n];if(f&&f.t=='d')return 'Это каталог';p.c[n]={t:'f',s:(ap&&f?f.s:'')+s};return ''};
+const col=(n,pre='',m={})=>{for(const k in n.c){if(k=='.git')continue;const v=n.c[k];v.t=='d'?col(v,pre+k+'/',m):m[pre+k]=v.s}return m};
+const put=(r,rel,s)=>{let n=get(r);const p=rel.split('/');for(const d of p.slice(0,-1))n=n.c[d]=n.c[d]&&n.c[d].t=='d'?n.c[d]:{t:'d',c:{}};n.c[p.pop()]={t:'f',s}};
+const del=(r,rel)=>{let n=get(r);const p=rel.split('/');for(const d of p.slice(0,-1))n=n&&n.c[d];if(n)delete n.c[p.pop()]};
+const root=()=>{for(let a=[...cwd];;a.pop()){const n=get(a);if(n&&n.c&&n.c['.git'])return a;if(!a.length)return null}};
+const snapOf=id=>id?Cm[id].snap:{};
+const ds=(a,b)=>{const r=[];for(const k in b)if(!(k in a))r.push([k,'A']);else if(a[k]!==b[k])r.push([k,'M']);for(const k in a)if(!(k in b))r.push([k,'D']);return r.sort()};
+const ST=(rt,R)=>{const w=col(get(rt)),x=ds(R.idx,w);return{st:ds(snapOf(R.br[R.head]),R.idx),un:x.filter(d=>d[1]!='A'),ut:x.filter(d=>d[1]=='A').map(d=>d[0])}};
+const reach=id=>{const s={},q=[id];while(q.length){const x=q.pop();if(!x||s[x])continue;s[x]=Cm[x];Cm[x].p.forEach(y=>q.push(y))}return Object.values(s).sort((a,b)=>b.n-a.n)};
+const mk=(R,msg,snap,p)=>{const n=++seq,id=Array.from({length:5},(_,i)=>hs(msg+n+i).toString(16).padStart(8,'0')).join('');Cm[id]={id,msg,snap:{...snap},p,n,a:env.name||'Ученик',t:new Date().toLocaleString('ru-RU')};R.br[R.head]=id;return id};
+const deco=(R,id)=>{const l=Object.keys(R.br).filter(b=>R.br[b]==id).map(b=>b==R.head?'HEAD -> '+b:b);return l.length?` (${l.join(', ')})`:''};
+const apply=(rt,R,sn)=>{for(const k in R.idx)if(!(k in sn))del(rt,k);for(const k in sn)put(rt,k,sn[k]);R.idx={...sn}};
+const sync=(rt,R)=>{get(rt).c['.git'].c.HEAD={t:'f',s:'ref: refs/heads/'+R.head+'\n'}};
+const mhit=(rt,p)=>{const rel=res(p).slice(rt.length).join('/');return k=>!rel||k==rel||k.startsWith(rel+'/')};
+const dirty=(rt,R)=>{const s=ST(rt,R);return s.st.length||s.un.length};
+const dl=(a,b)=>{const f=s=>s?s.replace(/\n$/,'').split('\n'):[];a=f(a);b=f(b);const m=a.length,n=b.length,L=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=m-1;i>=0;i--)for(let j=n-1;j>=0;j--)L[i][j]=a[i]==b[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);let i=0,j=0;const r=[];while(i<m&&j<n){if(a[i]==b[j]){r.push([' ',a[i]]);i++;j++}else if(L[i+1][j]>=L[i][j+1])r.push(['-',a[i++]]);else r.push(['+',b[j++]])}while(i<m)r.push(['-',a[i++]]);while(j<n)r.push(['+',b[j++]]);return r};
+const LB={A:'новый файл',M:'изменено',D:'удалено'};
+const cpf=(f,r,mv)=>{const c=mv?'mv':'cp';if(r.length<2)return er(c+': пропущен операнд');const sa=res(r[0]),s=get(sa);if(!s)return er(`${c}: не удалось получить информацию о «${r[0]}»: Нет такого файла или каталога`);if(s.t=='d'&&!mv&&!f.includes('r'))return er(`cp: не указан -r; пропускается каталог «${r[0]}»`);let da=res(r[1]);const d=get(da);if(d&&d.t=='d')da=[...da,sa[sa.length-1]];const p=get(da.slice(0,-1));if(!p||p.t!='d')return er(`${c}: невозможно создать «${r[1]}»: Нет такого файла или каталога`);p.c[da[da.length-1]]=JSON.parse(JSON.stringify(s));if(mv)delete get(sa.slice(0,-1)).c[sa[sa.length-1]]};
+const C={
+pwd:()=>o(E(norm(cwd))),
+ls:(f,r)=>{const all=f.includes('a'),L=f.includes('l'),ps=r.length?r:['.'];ps.forEach(p=>{const n=get(res(p));if(!n)return er(`ls: невозможно получить доступ к «${p}»: Нет такого файла или каталога`);if(n.t=='f')return o(E(p));if(ps.length>1)o(E(p)+':','m');let ks=Object.keys(n.c).sort();if(!all)ks=ks.filter(k=>k[0]!='.');if(L)ks.forEach(k=>{const v=n.c[k];o(`${v.t=='d'?'drwxr-xr-x':'-rw-r--r--'} user ${String(v.t=='d'?4096:v.s.length).padStart(5)}  ${nm(k,v)}`)});else if(ks.length)o(ks.map(k=>nm(k,n.c[k])).join('  '))})},
+cd:(f,r)=>{const a=res(r[0]||'~'),n=get(a);if(!n)return er(`cd: ${r[0]}: Нет такого файла или каталога`);if(n.t!='d')return er(`cd: ${r[0]}: Это не каталог`);cwd=a},
+mkdir:(f,r)=>{if(!r.length)return er('mkdir: пропущен операнд');r.forEach(p=>{const a=res(p);if(get(a)){if(!f.includes('p'))er(`mkdir: невозможно создать каталог «${p}»: Файл существует`);return}if(f.includes('p')){let n=fs;a.forEach(s=>{if(!n.c[s])n.c[s]={t:'d',c:{}};n=n.c[s]})}else{const q=get(a.slice(0,-1));if(!q||q.t!='d')return er(`mkdir: невозможно создать каталог «${p}»: Нет такого файла или каталога (попробуйте mkdir -p)`);q.c[a[a.length-1]]={t:'d',c:{}}}})},
+rmdir:(f,r)=>{if(!r.length)return er('rmdir: пропущен операнд');r.forEach(p=>{const a=res(p),n=get(a);if(!n)return er(`rmdir: не удалось удалить «${p}»: Нет такого файла или каталога`);if(n.t!='d')return er(`rmdir: не удалось удалить «${p}»: Это не каталог`);if(Object.keys(n.c).length)return er(`rmdir: не удалось удалить «${p}»: Каталог не пуст (для папок с файлами: rm -r)`);if(!a.length||norm(a)==norm(cwd))return er(`rmdir: не удалось удалить «${p}»: Нельзя удалить текущую папку`);delete get(a.slice(0,-1)).c[a[a.length-1]]})},
+touch:(f,r)=>{if(!r.length)return er('touch: не указан файл');r.forEach(p=>{const a=res(p);if(get(a))return;const e=wr(a,'');if(e)er(`touch: невозможно выполнить touch для «${p}»: ${e}`)})},
+cat:(f,r)=>{if(!r.length)return er('cat: укажите файл, например cat a.txt');r.forEach(p=>{const n=get(res(p));if(!n)return er(`cat: ${p}: Нет такого файла или каталога`);if(n.t=='d')return er(`cat: ${p}: Это каталог`);if(n.s)o(E(n.s.replace(/\n$/,'')))})},
+nano:(f,r)=>{if(!r[0])return er('nano: укажите имя файла, например nano a.txt');const a=res(r[0]),n=get(a);if(n&&n.t=='d')return er(`nano: «${r[0]}» — это каталог`);nfp=a;const T=!n&&/\.html?$/i.test(r[0]);$('#ta').value=n?n.s:T?TPL:'';nmod=T;$('#nf').textContent=r[0];$('#nm').textContent=n?'':'Новый файл';$('#nano').hidden=false;$('#nq').hidden=true;setTimeout(()=>$('#ta').focus(),0)},
+rm:(f,r)=>{if(!r.length)return er('rm: пропущен операнд');r.forEach(p=>{const a=res(p),n=get(a);if(!n||!a.length)return f.includes('f')||er(`rm: не удалось удалить «${p}»: Нет такого файла или каталога`);if(n.t=='d'&&!f.includes('r'))return er(`rm: не удалось удалить «${p}»: Это каталог (используйте rm -r)`);delete get(a.slice(0,-1)).c[a[a.length-1]]})},
+cp:(f,r)=>cpf(f,r,0),mv:(f,r)=>cpf(f,r,1),
+tree:(f,r)=>{const n=get(res(r[0]||'.'));if(!n)return er(`tree: ${r[0]}: Нет такого файла или каталога`);o(E(r[0]||'.'),'b');const w=(n,p)=>{if(n.t!='d')return;const ks=Object.keys(n.c).filter(k=>k[0]!='.'||f.includes('a')).sort();ks.forEach((k,i)=>{const L=i==ks.length-1;o(E(p+(L?'└── ':'├── '))+nm(k,n.c[k]));w(n.c[k],p+(L?'    ':'│   '))})};w(n,'')},
+grep:(f,r)=>{if(r.length<2)return er('grep: использование: grep слово файл');r.slice(1).forEach(p=>{const n=get(res(p));if(!n||n.t!='f')return er(`grep: ${p}: Нет такого файла`);n.s.split('\n').filter(l=>l.includes(r[0])).forEach(l=>o(E(l)))})},
+clear:()=>{out.innerHTML=''},
+start:(f,r)=>{if(!r[0])return er('start: укажите файл, например start index.html');const n=get(res(r[0]));if(!n)return er(`start: ${r[0]}: Нет такого файла или каталога`);if(n.t!='f')return er(`start: ${r[0]} — это папка, а не файл`);if(!/\.html?$/i.test(r[0]))return er(`start: в браузере открываются только .html файлы («${r[0]}» не подходит)`);bw=res(r[0]);bwGo=1;o(`Открываю ${E(r[0])} в браузере (вкладка «Браузер» справа)`,'gn')},
+history:()=>hist.forEach((h,i)=>o(String(i+1).padStart(4)+'  '+E(h))),
+whoami:()=>o('user'),date:()=>o(E(new Date().toLocaleString('ru-RU'))),
+help:()=>{o('Команды терминала:','b');Object.keys(DESC).filter(k=>!k.startsWith('git ')).forEach(k=>o(`  <span class="k">${k.padEnd(8)}</span>${E(DESC[k])}`));o('\nКоманды Git (git &lt;команда&gt;):','b');Object.keys(DESC).filter(k=>k.startsWith('git ')).forEach(k=>o(`  <span class="k">${k.slice(4).padEnd(8)}</span>${E(DESC[k])}`));o('\nПодсказки: Tab — дополнить, ↑ ↓ — история, перенаправление: команда &gt; файл','m')}
+};
+C.open=C['xdg-open']=C.start;
+function git(a){
+const s=a[0],r=a.slice(1),pos=r.filter(x=>x[0]!='-'),fl=r.filter(x=>x[0]=='-').join('');
+if(!s||s=='help')return o('Основные команды: init clone config add status commit log diff branch checkout switch merge restore reset rm remote push pull\nПодробности: help','m');
+if(s=='init'){const n=get(cwd);if(n.c['.git'])return o('Репозиторий Git уже существует в '+E(norm(cwd))+'/.git/');n.c['.git']={t:'d',c:{HEAD:{t:'f',s:'ref: refs/heads/main\n'}}};repos[norm(cwd)]={br:{main:null},head:'main',idx:{},rem:{}};return o(`<span class="gn">Создан пустой репозиторий Git в ${E(norm(cwd))}/.git/</span>`)}
+if(s=='config'){const k=pos[0],v=pos[1];if(!k)return er('git config: укажите ключ, например git config --global user.name "Имя"');const m={'user.name':'name','user.email':'email'}[k];if(!m)return er(`git config: неизвестный ключ «${k}»`);if(v===undefined)return o(E(env[m]||''));env[m]=v;return}
+if(s=='clone'){if(!pos[0])return er('fatal: укажите адрес репозитория');const nme=pos[1]||pos[0].split('/').pop().replace(/\.git$/,'');if(get(res(nme)))return er(`fatal: путь назначения «${nme}» уже существует`);const a=res(nme);o(`Клонирование в «${E(nme)}»...`);const p=get(a.slice(0,-1));if(!p)return er('fatal: нет такого каталога');p.c[nme]={t:'d',c:{'README.md':{t:'f',s:'# '+nme+'\n'},'.git':{t:'d',c:{HEAD:{t:'f',s:'ref: refs/heads/main\n'}}}}};const R={br:{main:null},head:'main',idx:{},rem:{origin:pos[0]}};repos[norm(a)]=R;R.idx={'README.md':'# '+nme+'\n'};mk(R,'Первоначальный коммит',R.idx,[]);return o('готово.','gn')}
+const rt=root();if(!rt)return er('fatal: это не репозиторий Git (и ни один из родительских каталогов). Начните с git init');
+const R=repos[norm(rt)],tip=()=>R.br[R.head],hd=()=>snapOf(tip());
+if(s=='status'){const x=ST(rt,R);o(`На ветке <span class="k">${E(R.head)}</span>`);if(!tip())o('\nКоммитов пока нет','m');if(x.st.length){o('\nИзменения, готовые к коммиту:','gn');x.st.forEach(([k,t])=>o(`\t<span class="gn">${LB[t]}: ${E(k)}</span>`))}if(x.un.length){o('\nИзменения, не добавленные в индекс (git add):','y');x.un.forEach(([k,t])=>o(`\t<span class="y">${LB[t]}: ${E(k)}</span>`))}if(x.ut.length){o('\nНеотслеживаемые файлы (git add):','r');x.ut.forEach(k=>o(`\t<span class="r">${E(k)}</span>`))}if(!x.st.length&&!x.un.length&&!x.ut.length)o(tip()?'\nнечего коммитить, рабочее дерево чистое':'\nнечего коммитить (создайте файлы и используйте git add)','m');return}
+if(s=='add'){if(!pos.length)return er('Ничего не указано. Возможно, вы хотели «git add .»?');const w=col(get(rt));pos.forEach(p=>{const a=res(p);if(a.slice(0,rt.length).join('/')!=rt.join('/'))return er(`fatal: путь «${p}» вне репозитория`);const h=mhit(rt,p);let any=0;Object.keys(w).forEach(k=>{if(h(k)){R.idx[k]=w[k];any=1}});Object.keys(R.idx).forEach(k=>{if(h(k)&&!(k in w)){delete R.idx[k];any=1}});if(!any)er(`fatal: путь «${p}» не соответствует ни одному файлу`)});return}
+if(s=='commit'){const mi=r.findIndex(x=>/^-[a-z]*m$/.test(x)),msg=mi>=0?r[mi+1]:null;if(!msg)return er('Прервано: нужно сообщение. Используйте: git commit -m "сообщение"');if(/^-[a-z]*a[a-z]*$/.test(r[mi])){const w=col(get(rt));for(const k in R.idx)k in w?R.idx[k]=w[k]:delete R.idx[k]}const c=ds(hd(),R.idx);if(!c.length)return o(`На ветке ${E(R.head)}\nнечего коммитить: нет изменений в индексе (сначала git add)`,'y');const first=!tip(),id=mk(R,msg,R.idx,first?[]:[tip()]);o(`[${E(R.head)} ${first?'(корневой коммит) ':''}${id.slice(0,7)}] ${E(msg)}`);o(' изменено файлов: '+c.length,'m');return}
+if(s=='log'){if(!tip())return er(`fatal: ветка «${R.head}» пока не содержит коммитов`);reach(tip()).forEach(c=>{if(fl.includes('oneline'))o(`<span class="y">${c.id.slice(0,7)}</span><span class="k">${E(deco(R,c.id))}</span> ${E(c.msg)}`);else{o(`<span class="y">commit ${c.id}</span><span class="k">${E(deco(R,c.id))}</span>`);o(`Author: ${E(c.a)}\nDate:   ${c.t}\n\n    ${E(c.msg)}\n`)}});return}
+if(s=='diff'){const A=fl.includes('staged')||fl.includes('cached'),[x,y]=A?[hd(),R.idx]:[R.idx,col(get(rt))];ds(x,y).filter(d=>A||d[1]!='A').forEach(([k,t])=>{o(`<b>diff --git a/${E(k)} b/${E(k)}</b>`);if(t=='A')o('новый файл','m');if(t=='D')o('файл удалён','m');o(`@@ ${E(k)} @@`,'p');dl(x[k],y[k]).forEach(([c,l])=>o(E(c+l),c=='+'?'gn':c=='-'?'r':''))});return}
+if(s=='branch'){if(/d/i.test(fl)){const b=pos[0];if(!(b in R.br))return er(`error: ветка «${b}» не найдена`);if(b==R.head)return er(`error: нельзя удалить ветку «${b}», на которой вы находитесь`);delete R.br[b];return o(`Ветка ${E(b)} удалена`)}if(pos[0]){if(!tip())return er('fatal: сначала сделайте хотя бы один коммит');if(pos[0] in R.br)return er(`fatal: ветка «${pos[0]}» уже существует`);R.br[pos[0]]=tip();return}Object.keys(R.br).sort().forEach(b=>o(b==R.head?`* <span class="gn">${E(b)}</span>`:'  '+E(b)));return}
+if((s=='checkout'||s=='switch')&&!r.includes('--')){const nw=/b|c/.test(fl.replace(/-/g,'')),n=pos[0];if(!n)return er('fatal: укажите ветку');if(nw){if(n in R.br)return er(`fatal: ветка «${n}» уже существует`);if(!tip()){delete R.br[R.head];R.br[n]=null}else R.br[n]=tip();R.head=n;sync(rt,R);return o(`Переключено на новую ветку «${E(n)}»`)}
+if(!(n in R.br))return er(`error: ветка «${n}» не найдена. Создать: git ${s} ${s=='switch'?'-c':'-b'} ${n}`);if(dirty(rt,R))return er('error: есть незафиксированные изменения. Сделайте git commit или git restore, затем переключайтесь');if(n==R.head)return o(`Уже на «${E(n)}»`);if(R.br[n])apply(rt,R,snapOf(R.br[n]));R.head=n;sync(rt,R);return o(`Переключено на ветку «${E(n)}»`)}
+if(s=='restore'||s=='checkout'){const stg=fl.includes('staged');if(!pos.length)return er('fatal: укажите файл (или . для всех)');pos.forEach(p=>{const h=mhit(rt,p);let any=0;if(stg){const H=hd();new Set([...Object.keys(H),...Object.keys(R.idx)]).forEach(k=>{if(h(k)){any=1;k in H?R.idx[k]=H[k]:delete R.idx[k]}})}else Object.keys(R.idx).forEach(k=>{if(h(k)){any=1;put(rt,k,R.idx[k])}});if(!any)er(`error: путь «${p}» не соответствует ни одному файлу, известному git`)});return}
+if(s=='merge'){const n=pos[0];if(!n||!(n in R.br))return er(`merge: «${n||''}» — не ветка`);if(n==R.head)return o('Уже актуально.');if(dirty(rt,R))return er('error: есть незафиксированные изменения. Сначала git commit');const our=tip(),th=R.br[n];if(!th)return o('Уже актуально.');const oa=reach(our),ta=reach(th);if(oa.some(c=>c.id==th))return o('Уже актуально.');if(!our||ta.some(c=>c.id==our)){R.br[R.head]=th;apply(rt,R,snapOf(th));return o(`Fast-forward: ветка ${E(R.head)} подтянулась к ${E(n)}`,'gn')}const tids=new Set(ta.map(c=>c.id)),base=oa.find(c=>tids.has(c.id)),bs=snapOf(base&&base.id),os=snapOf(our),ts=snapOf(th),m={};let bad=[];new Set([...Object.keys(bs),...Object.keys(os),...Object.keys(ts)]).forEach(k=>{const b=bs[k],x=os[k],y=ts[k];let v;if(x===y)v=x;else if(x===b)v=y;else if(y===b)v=x;else{bad.push(k);return}if(v!==undefined)m[k]=v});if(bad.length){bad.forEach(k=>er(`КОНФЛИКТ (содержимое): правки пересекаются в ${k}`));return er('Автослияние не удалось. В учебной версии слияние отменено: измените ветки так, чтобы они правили разные файлы.')}apply(rt,R,m);mk(R,`Слияние ветки ${n} в ${R.head}`,m,[our,th]);return o('Слияние выполнено (создан коммит слияния).','gn')}
+if(s=='reset'){const mode=fl.includes('hard')?'h':fl.includes('soft')?'s':'m',x=pos[0]===undefined?'HEAD':pos[0],mm=/^HEAD(?:~(\d+))?$/.exec(x);let id;if(mm){id=tip();for(let i=0;i<(+mm[1]||0)&&id;i++)id=Cm[id].p[0]||null}else id=Object.keys(Cm).find(i=>x.length>3&&i.startsWith(x));if(id===undefined){const H=hd();pos.forEach(p=>{const h=mhit(rt,p);Object.keys({...H,...R.idx}).forEach(k=>{if(h(k))k in H?R.idx[k]=H[k]:delete R.idx[k]})});return}R.br[R.head]=id;const sn=snapOf(id);if(mode!='s')R.idx={...sn};if(mode=='h'){apply(rt,R,sn);return o(id?`HEAD теперь на ${id.slice(0,7)} ${E(Cm[id].msg)}`:'HEAD теперь пуст (нет коммитов)')}return}
+if(s=='rm'){pos.forEach(p=>{const k=res(p).slice(rt.length).join('/');if(!(k in R.idx))return er(`fatal: путь «${p}» не соответствует ни одному файлу`);del(rt,k);delete R.idx[k];o(`rm '${E(k)}'`)});return}
+if(s=='remote'){if(pos[0]=='add'){if(pos.length<3)return er('использование: git remote add имя адрес');R.rem[pos[1]]=pos[2];return}Object.keys(R.rem).forEach(k=>o(fl.includes('v')?`${E(k)}\t${E(R.rem[k])} (push)`:E(k)));return}
+if(s=='push'||s=='pull'||s=='fetch'){const n=pos[0]||'origin';if(!R.rem[n])return er(`fatal: «${n}» не похоже на репозиторий Git. Добавьте: git remote add origin адрес`);if(s!='push')return o('Уже актуально.');if(!tip())return er('error: нечего отправлять, сначала сделайте коммит');o(`Подсчёт объектов: ${reach(tip()).length}, готово.`);o('To '+E(R.rem[n]));return o(` * [new branch]      ${E(R.head)} -> ${E(R.head)}`,'gn')}
+er(`git: «${s}» не является командой git. См. help`)}
+const pr=()=>{const rt=root();return `<b class="u">user@adele</b>:<b class="p">${E(disp(cwd))}</b>${rt?` <b class="k">(${E(repos[norm(rt)].head)})</b>`:''}$ `};
+function run(line){
+raw(pr()+E(line),'');line=line.trim();if(!line)return;hist.push(line);hi=hist.length;
+const tk=[];line.replace(/"([^"]*)"|'([^']*)'|(>>?)|([^\s>]+)/g,(m,a,b,c,d)=>{tk.push(c?'\0'+c:a??b??d)});
+let op,tg,i=tk.findIndex(x=>x[0]=='\0');if(i>=0){op=tk[i];tg=tk[i+1];tk.length=i;if(!tg)return er('ошибка синтаксиса: после '+op.slice(1)+' нужно имя файла');cap=[]}
+const cmd=tk[0],args=tk.slice(1),isf=x=>/^-[a-zA-Z]+$/.test(x),fl=args.filter(isf).join('').replace(/-/g,''),r=args.filter(x=>!isf(x));
+try{if(cmd=='git')git(args);else if(cmd=='echo')o(E(args.join(' ')));else if(C[cmd])C[cmd](fl,r);else er(`${cmd}: команда не найдена. Введите help`)}catch(e){er('Ошибка: '+e.message)}
+if(cap){const t=cap.join('\n')+(cap.length?'\n':'');cap=null;const e=wr(res(tg),t,op=='\0>>');if(e)er(`${tg}: ${e}`)}
+const key=cmd=='git'?'git '+args[0]:(cmd=='open'||cmd=='xdg-open')?'start':cmd;$('#hint').innerHTML=DESC[key]?`<b>${E(key)}</b> — ${E(DESC[key])}`:(cmd=='echo'?`<b>echo</b> — ${E(DESC.echo)}`:'Такой команды нет. Введите <b>help</b>, чтобы увидеть список.');
+if(cmd=='git')tab('g');else if(bwGo){bwGo=0;tab('b')}else if(cmd!='clear'&&cmd!='history')tab('f')}
+function tab(t){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));$('#wf').hidden=t!='f';$('#wg').hidden=t!='g';$('#wb').hidden=t!='b'}
+function draw(){
+$('#pr').innerHTML=pr();$('#path').textContent=norm(cwd);
+const bn=bw&&get(bw),bs=bn&&bn.t=='f'?page(bn.s):null;$('#url').textContent=bw?'file://'+norm(bw):'Введите start index.html, чтобы открыть страницу';if(bs!==lastB){lastB=bs;$('#fr').srcdoc=bs===null?'<p style="font:14px system-ui;color:#80848f;padding:20px">Здесь появится страница. Создайте HTML файл (nano index.html) и введите <b>start index.html</b></p>':bs}
+const bd={};for(const k in repos){const a=k.split('/').filter(Boolean),n=get(a);if(!n||!n.c||!n.c['.git'])continue;const x=ST(a,repos[k]);x.ut.forEach(f=>bd[k+'/'+f]='?');x.un.forEach(([f,t])=>bd[k+'/'+f]=t);x.st.forEach(([f,t])=>{if(!bd[k+'/'+f])bd[k+'/'+f]=t=='A'?'A':t})}
+let h=`<div class="tr" style="padding-left:8px">${IC.d}<span>/</span></div>`;
+const w=(n,a,d)=>Object.keys(n.c).sort((x,y)=>(n.c[y].t=='d')-(n.c[x].t=='d')||x.localeCompare(y)).forEach(k=>{const v=n.c[k],b=[...a,k],p=norm(b);h+=`<div class="tr${p==norm(cwd)?' cur':''}${sel==p?' sel':''}" data-p="${E(p)}" data-t="${v.t}" style="padding-left:${8+d*16}px;${k[0]=='.'?'opacity:.55':''}">${IC[v.t]}<span>${E(k)}</span>${bd[p]?`<em class="bg ${bd[p]=='?'?'q':bd[p]}">${bd[p]=='?'?'U':bd[p]}</em>`:''}</div>`;if(v.t=='d'&&k!='.git')w(v,b,d+1)});
+w(fs,[],1);$('#tree').innerHTML=h;
+const sn=sel&&get(sel.split('/').filter(Boolean));$('#pv').innerHTML=sn&&sn.t=='f'?`<b>${E(sel.split('/').pop())}</b> <small>${sn.s.length} симв.</small><pre>${E(sn.s)||'<small>(пустой файл)</small>'}</pre>`:'<small>Нажмите на файл, чтобы посмотреть содержимое, или на папку, чтобы перейти в неё. Метки: U — новый, M — изменён, A — в индексе, D — удалён.</small>';
+const rt=root(),g=$('#wg');if(!rt){g.innerHTML='<div class="empty">Здесь пока нет репозитория Git.<br>Перейдите в папку проекта и введите <b>git init</b>.</div>';return}
+const R=repos[norm(rt)],x=ST(rt,R),ids={};Object.keys(R.br).forEach(b=>reach(R.br[b]).forEach(c=>ids[c.id]=c));const L=Object.values(ids).sort((a,b)=>b.n-a.n),cn=n=>n?`<span class="ch ${n[1]}">`:'';
+const chs=(a,c)=>a.length?`<div class="fl">${a.map(k=>`<span class="ch ${c}">${E(k)}</span>`).join('')}</div>`:'<div class="fl sec">нет</div>';
+g.innerHTML=`<div class="flow"><div><b>${x.un.length+x.ut.length}</b><small>Рабочая папка</small></div><i>add →</i><div><b>${x.st.length}</b><small>Индекс</small></div><i>commit →</i><div><b>${reach(R.br[R.head]).length}</b><small>Коммитов в ветке</small></div></div>
+<div class="sec">Ветки</div><div class="fl">${Object.keys(R.br).sort().map(b=>`<span class="ch ${b==R.head?'s':'h'}">${b==R.head?'● ':''}${E(b)}</span>`).join('')}</div>
+<div class="sec">Готово к коммиту</div>${chs(x.st.map(d=>d[0]),'s')}<div class="sec">Изменено, но не в индексе</div>${chs(x.un.map(d=>d[0]),'c')}<div class="sec">Неотслеживаемые</div>${chs(x.ut,'u')}
+<div class="sec" style="margin-bottom:4px">История</div>${L.length?L.map(c=>`<div class="cm${c.p.length>1?' mg':''}"><i></i><div><code>${c.id.slice(0,7)}</code> ${E(c.msg)} ${Object.keys(R.br).filter(b=>R.br[b]==c.id).map(b=>`<span class="ch ${b==R.head?'s':'h'}">${E(b)}</span>`).join(' ')}</div></div>`).join(''):'<div class="empty">Коммитов ещё нет</div>'}`}
+function boot(){fs={t:'d',c:{home:{t:'d',c:{user:{t:'d',c:{Desktop:{t:'d',c:{}}}}}}}};cwd=['home','user'];repos={};Cm={};seq=0;env={};sel=null;bw=null;hist=[];out.innerHTML='';
+raw('Добро пожаловать в учебный терминал Adele Labs.','b');raw('Это безопасная песочница: всё, что вы создаёте, живёт только в этой вкладке.\nВведите <span class="k">help</span> или нажимайте на подсказки под терминалом.\n','m');$('#hint').textContent='Введите команду и нажмите Enter. Справа видно, как меняется компьютер.';draw();tab('f')}
+inp.addEventListener('keydown',e=>{
+if(e.key=='Enter'){const v=inp.value;inp.value='';run(v);draw()}
+else if(e.key=='ArrowUp'){e.preventDefault();if(hi>0)inp.value=hist[--hi]}
+else if(e.key=='ArrowDown'){e.preventDefault();inp.value=++hi<hist.length?hist[hi]:(hi=hist.length,'')}
+else if(e.key=='l'&&e.ctrlKey){e.preventDefault();out.innerHTML=''}
+else if(e.key=='c'&&e.ctrlKey){raw(pr()+E(inp.value)+'^C');inp.value=''}
+else if(e.key=='Tab'){e.preventDefault();comp()}
+setTimeout(()=>{$('#term').scrollTop=1e9},0)});
+function comp(){const v=inp.value,w=/(\S*)$/.exec(v)[1],base=v.slice(0,v.length-w.length),first=!/\s/.test(v);let c=[];
+if(first)c=Object.keys(C).concat(['git','echo']).filter(x=>x.startsWith(w));else{const i=w.lastIndexOf('/'),dir=w.slice(0,i+1),n=get(res(dir||'.'));if(n&&n.t=='d')c=Object.keys(n.c).filter(k=>k.startsWith(w.slice(i+1))).map(k=>dir+k+(n.c[k].t=='d'?'/':''))}
+if(c.length==1)inp.value=base+c[0]+(c[0].endsWith('/')?'':' ');else if(c.length>1){let p=c[0];c.forEach(x=>{while(!x.startsWith(p))p=p.slice(0,-1)});if(p.length>w.length)inp.value=base+p;else raw(pr()+E(v)+'\n'+c.map(E).join('  '),'m')}}
+$('#term').onclick=()=>{if(!getSelection().toString())inp.focus()};
+$('#chips').innerHTML=CH.map(c=>`<button>${E(c)}</button>`).join('');
+$('#chips').onclick=e=>{if(e.target.tagName=='BUTTON'){inp.value=e.target.textContent;inp.focus()}};
+$('#rs').onclick=()=>{boot();inp.focus()};
+document.querySelector('.tabs').onclick=e=>{if(e.target.dataset.t)tab(e.target.dataset.t)};
+$('#tree').onclick=e=>{const t=e.target.closest('.tr');if(!t||!t.dataset.p)return;if(t.dataset.t=='d'){run('cd "'+t.dataset.p+'"');draw()}else{sel=t.dataset.p;draw()}};
+function nsave(){const e=wr(nfp,$('#ta').value);if(e){$('#nm').textContent=e;return false}nmod=false;$('#nm').textContent='Сохранено';draw();return true}
+function nexit(){$('#nano').hidden=true;nfp=null;draw();inp.focus()}
+function nreq(){nmod?$('#nq').hidden=false:nexit()}
+$('#ta').addEventListener('input',()=>{nmod=true;$('#nm').textContent='Изменён'});
+$('#ta').addEventListener('keydown',e=>{if(e.ctrlKey&&e.key=='o'){e.preventDefault();nsave()}else if(e.ctrlKey&&e.key=='x'||e.key=='Escape'){e.preventDefault();nreq()}});
+$('#no').onclick=nsave;$('#nx').onclick=nreq;
+$('#nq').onclick=e=>{const q=e.target.dataset.q;if(q=='y'){if(nsave())nexit()}else if(q=='n')nexit();else if(q=='c'){$('#nq').hidden=true;$('#ta').focus()}};
+const clk=()=>$('#clk').textContent=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});clk();setInterval(clk,30000);
+boot();inp.focus();
+</script></body></html>
